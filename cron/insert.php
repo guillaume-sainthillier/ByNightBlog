@@ -2,11 +2,12 @@
 
 require_once __DIR__ . '/required/init.php';
 
-$container = get_container();
-$manager   = $container->get('tbn.news_manager');
-
-$lundi    = new \DateTime('monday this week');
-$dimanche = new \DateTime('sunday this week');
+$arguments   = isset($argv) ? $argv : (isset($_REQUEST) ? $_REQUEST : []);
+$forceUpdate = in_array("--force", $arguments) || in_array('force', $arguments);
+$container   = get_container();
+$manager     = $container->get('tbn.news_manager');
+$lundi       = new \DateTime('monday this week');
+$dimanche    = new \DateTime('sunday this week');
 
 $datas        = $manager->getNewsDatas($lundi, $dimanche);
 $content      = str_replace("\n", "", $datas['content']);
@@ -15,10 +16,6 @@ $sortedEvents = sort_events(array_filter($datas['events']));
 $news    = $datas['news'];
 $post_id = $news->getWordpressPostId();
 $edition = $news->getNumeroEdition();
-
-// dump(get_post($post_id));
-// dump(get_post_meta($post_id));
-// die;
 
 $headline = sprintf(
     'By Night Magazine #%d du %s au %s. On a sélectionné rien que pour vous le top 3 des meilleurs événements dans votre ville !',
@@ -70,7 +67,6 @@ $content = sprintf(
     formatDate($dimanche, IntlDateFormatter::LONG, IntlDateFormatter::NONE)
 );
 
-$forceUpdate = false;
 if ($forceUpdate || $old_post_id !== $post_id) {
     // Création de la miniature
     $image = create_thumb(
@@ -102,6 +98,7 @@ if ($forceUpdate || $old_post_id !== $post_id) {
 }
 
 $datas = get_post($post_id);
+$metas = get_post_meta($post_id);
 $thumb = get_post($metas['_thumbnail_id'][0]);
 
 //Update en base pour historique de la news
